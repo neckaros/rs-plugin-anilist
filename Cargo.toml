@@ -1,6 +1,6 @@
 [package]
 name = "rs-plugin-anilist"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [lib]
@@ -8,6 +8,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 extism-pdk = "1.4.1"
-rs-plugin-common-interfaces = "0.25.1"
+rs-plugin-common-interfaces = "0.25.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

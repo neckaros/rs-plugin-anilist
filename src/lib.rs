@@ -19,6 +19,7 @@ pub fn infos() -> FnResult<Json<PluginInformation>> {
         capabilities: vec![PluginType::LookupMetadata],
         version: 1,
         interface_version: 1,
+        repo: Some("https://github.com/neckaros/rs-plugin-anilist".into()),
         publisher: "neckaros".into(),
         description: "Look up anime and manga metadata from AniList".into(),
         credential_kind: None,
