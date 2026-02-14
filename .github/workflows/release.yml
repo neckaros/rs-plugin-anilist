@@ -54,6 +54,6 @@ jobs:
           body: |
             Production release of WASM plugin.
             Built with Rust ${{ matrix.rust }} for target wasm32-unknown-unknown.
-          files: target/wasm32-unknown-unknown/release/redseat_plugin_anilist.wasm
+          files: target/wasm32-unknown-unknown/release/rs-plugin-anilist.wasm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
