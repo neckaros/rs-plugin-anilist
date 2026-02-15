@@ -9,7 +9,7 @@ use serde_json::json;
 mod anilist;
 mod convert;
 
-use anilist::{AniListGraphQLResponse, GraphQLRequest, ANILIST_SEARCH_QUERY};
+use anilist::{AniListGraphQLResponse, GraphQLRequest, build_search_query};
 use convert::anilist_media_to_result;
 
 #[plugin_fn]
@@ -39,7 +39,7 @@ pub fn lookup_metadata(
     };
 
     let body = GraphQLRequest {
-        query: ANILIST_SEARCH_QUERY.to_string(),
+        query: build_search_query(),
         variables: json!({
             "search": search,
             "type": media_type
@@ -76,10 +76,16 @@ pub fn lookup_metadata(
         Ok(res) if res.status_code() >= 200 && res.status_code() < 300 => {
             match res.json::<AniListGraphQLResponse>() {
                 Ok(graphql_response) => {
-                    let results: Vec<RsLookupMetadataResultWithImages> = graphql_response
-                        .data
-                        .and_then(|d| d.page.media)
-                        .unwrap_or_default()
+                    let mut all_media = Vec::new();
+                    if let Some(data) = graphql_response.data {
+                        if let Some(sfw) = data.sfw {
+                            all_media.extend(sfw.media.unwrap_or_default());
+                        }
+                        if let Some(nsfw) = data.nsfw {
+                            all_media.extend(nsfw.media.unwrap_or_default());
+                        }
+                    }
+                    let results: Vec<RsLookupMetadataResultWithImages> = all_media
                         .into_iter()
                         .map(anilist_media_to_result)
                         .collect();

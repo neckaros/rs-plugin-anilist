@@ -12,9 +12,9 @@ pub struct AniListGraphQLResponse {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "PascalCase")]
 pub struct AniListData {
-    pub page: AniListPage,
+    pub sfw: Option<AniListPage>,
+    pub nsfw: Option<AniListPage>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -75,10 +75,7 @@ pub struct AniListTrailer {
     pub site: Option<String>,
 }
 
-pub const ANILIST_SEARCH_QUERY: &str = r#"
-query ($search: String, $type: MediaType) {
-  Page(page: 1, perPage: 25) {
-    media(search: $search, type: $type, isAdult: true) {
+const MEDIA_FIELDS: &str = "
       id
       title {
         romaji
@@ -113,7 +110,22 @@ query ($search: String, $type: MediaType) {
       idMal
       siteUrl
       isAdult
-    }
-  }
+";
+
+pub fn build_search_query() -> String {
+    format!(
+        r#"query ($search: String, $type: MediaType) {{
+  sfw: Page(page: 1, perPage: 25) {{
+    media(search: $search, type: $type, isAdult: false) {{
+      {fields}
+    }}
+  }}
+  nsfw: Page(page: 1, perPage: 25) {{
+    media(search: $search, type: $type, isAdult: true) {{
+      {fields}
+    }}
+  }}
+}}"#,
+        fields = MEDIA_FIELDS
+    )
 }
-"#;
