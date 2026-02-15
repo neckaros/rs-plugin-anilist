@@ -24,7 +24,7 @@ fn test_lookup_one_piece_by_name() {
 
     let input = RsLookupWrapper {
         query: RsLookupQuery::Serie(RsLookupSerie {
-            name: "One piece".to_string(),
+            name: Some("One piece".to_string()),
             ids: None,
         }),
         credential: None,
@@ -54,7 +54,7 @@ fn test_lookup_one_piece_by_anilist_id() {
 
     let input = RsLookupWrapper {
         query: RsLookupQuery::Serie(RsLookupSerie {
-            name: String::new(),
+            name: None,
             ids: Some(RsIds {
                 anilist_manga_id: Some(21087), // One Piece
                 ..Default::default()
@@ -87,7 +87,7 @@ fn test_lookup_empty_name_returns_empty() {
 
     let input = RsLookupWrapper {
         query: RsLookupQuery::Serie(RsLookupSerie {
-            name: "".to_string(),
+            name: Some("".to_string()),
             ids: None,
         }),
         credential: None,

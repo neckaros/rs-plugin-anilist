@@ -168,16 +168,14 @@ pub fn lookup_metadata(
         fetch_by_id(anilist_id, &lookup.credential)?
     } else {
         let search = match &lookup.query {
-            RsLookupQuery::Serie(s) => &s.name,
-            RsLookupQuery::Movie(m) => &m.name,
+            RsLookupQuery::Serie(s) => s.name.as_deref(),
+            RsLookupQuery::Movie(m) => m.name.as_deref(),
             _ => unreachable!(),
         };
-
-        if search.trim().is_empty() {
-            return Ok(Json(vec![]));
+        match search {
+            Some(s) if !s.trim().is_empty() => fetch_by_search(s, media_type, &lookup.credential)?,
+            _ => return Err(WithReturnCode::new(extism_pdk::Error::msg("Not supported"), 404)),
         }
-
-        fetch_by_search(search, media_type, &lookup.credential)?
     };
 
     let results: Vec<RsLookupMetadataResultWithImages> = all_media
