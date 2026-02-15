@@ -7,14 +7,25 @@ pub struct GraphQLRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct AniListGraphQLResponse {
-    pub data: Option<AniListData>,
+pub struct AniListSearchResponse {
+    pub data: Option<AniListSearchData>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct AniListData {
+pub struct AniListSearchData {
     pub sfw: Option<AniListPage>,
     pub nsfw: Option<AniListPage>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AniListIdResponse {
+    pub data: Option<AniListIdData>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct AniListIdData {
+    pub media: Option<AniListMedia>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -111,6 +122,17 @@ const MEDIA_FIELDS: &str = "
       siteUrl
       isAdult
 ";
+
+pub fn build_id_query() -> String {
+    format!(
+        r#"query ($id: Int) {{
+  Media(id: $id) {{
+    {fields}
+  }}
+}}"#,
+        fields = MEDIA_FIELDS
+    )
+}
 
 pub fn build_search_query() -> String {
     format!(
