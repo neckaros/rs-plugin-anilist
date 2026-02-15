@@ -3,19 +3,24 @@ use rs_plugin_common_interfaces::{
         external_images::{ExternalImage, ImageType},
         serie::{Serie, SerieStatus},
     },
-    lookup::RsLookupMetadataResultWithImages,
     lookup::RsLookupMetadataResult,
+    lookup::RsLookupMetadataResultWithImages,
 };
 use serde_json::json;
 
 use crate::anilist::AniListMedia;
 
 fn best_title(media: &AniListMedia) -> String {
-    media.title.as_ref().and_then(|t| {
-        t.english.clone()
-            .or_else(|| t.romaji.clone())
-            .or_else(|| t.native.clone())
-    }).unwrap_or_default()
+    media
+        .title
+        .as_ref()
+        .and_then(|t| {
+            t.english
+                .clone()
+                .or_else(|| t.romaji.clone())
+                .or_else(|| t.native.clone())
+        })
+        .unwrap_or_default()
 }
 
 fn alt_names(media: &AniListMedia) -> Option<Vec<String>> {
@@ -40,7 +45,11 @@ fn alt_names(media: &AniListMedia) -> Option<Vec<String>> {
         }
     }
 
-    if alts.is_empty() { None } else { Some(alts) }
+    if alts.is_empty() {
+        None
+    } else {
+        Some(alts)
+    }
 }
 
 fn map_status(status: &Option<String>) -> Option<SerieStatus> {
@@ -57,7 +66,8 @@ fn map_status(status: &Option<String>) -> Option<SerieStatus> {
 fn build_trailer_url(media: &AniListMedia) -> Option<String> {
     media.trailer.as_ref().and_then(|t| {
         if t.site.as_deref() == Some("youtube") {
-            t.id.as_ref().map(|id| format!("https://www.youtube.com/watch?v={}", id))
+            t.id.as_ref()
+                .map(|id| format!("https://www.youtube.com/watch?v={}", id))
         } else {
             None
         }
@@ -68,7 +78,9 @@ fn build_images(media: &AniListMedia) -> Vec<ExternalImage> {
     let mut images = Vec::new();
 
     if let Some(cover) = &media.cover_image {
-        let url = cover.extra_large.as_ref()
+        let url = cover
+            .extra_large
+            .as_ref()
             .or(cover.large.as_ref())
             .or(cover.medium.as_ref());
         if let Some(url) = url {
@@ -149,10 +161,14 @@ pub fn anilist_media_to_result(media: AniListMedia) -> RsLookupMetadataResultWit
     }
 }
 
+pub fn anilist_media_to_images(media: &AniListMedia) -> Vec<ExternalImage> {
+    build_images(media)
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::anilist::*;
     use super::*;
+    use crate::anilist::*;
 
     fn sample_media() -> AniListMedia {
         AniListMedia {
@@ -213,11 +229,26 @@ mod tests {
 
     #[test]
     fn test_status_mapping() {
-        assert_eq!(map_status(&Some("FINISHED".to_string())), Some(SerieStatus::Ended));
-        assert_eq!(map_status(&Some("RELEASING".to_string())), Some(SerieStatus::Returning));
-        assert_eq!(map_status(&Some("NOT_YET_RELEASED".to_string())), Some(SerieStatus::Planned));
-        assert_eq!(map_status(&Some("CANCELLED".to_string())), Some(SerieStatus::Canceled));
-        assert_eq!(map_status(&Some("HIATUS".to_string())), Some(SerieStatus::Other("hiatus".to_string())));
+        assert_eq!(
+            map_status(&Some("FINISHED".to_string())),
+            Some(SerieStatus::Ended)
+        );
+        assert_eq!(
+            map_status(&Some("RELEASING".to_string())),
+            Some(SerieStatus::Returning)
+        );
+        assert_eq!(
+            map_status(&Some("NOT_YET_RELEASED".to_string())),
+            Some(SerieStatus::Planned)
+        );
+        assert_eq!(
+            map_status(&Some("CANCELLED".to_string())),
+            Some(SerieStatus::Canceled)
+        );
+        assert_eq!(
+            map_status(&Some("HIATUS".to_string())),
+            Some(SerieStatus::Other("hiatus".to_string()))
+        );
         assert_eq!(map_status(&None), None);
     }
 

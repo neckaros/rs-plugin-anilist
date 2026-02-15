@@ -18,6 +18,14 @@ fn call_lookup(plugin: &mut Plugin, input: &RsLookupWrapper) -> serde_json::Valu
     serde_json::from_slice(output).expect("Failed to parse output JSON")
 }
 
+fn call_lookup_images(plugin: &mut Plugin, input: &RsLookupWrapper) -> serde_json::Value {
+    let input_str = serde_json::to_string(input).unwrap();
+    let output = plugin
+        .call::<&str, &[u8]>("lookup_metadata_images", &input_str)
+        .expect("lookup_metadata_images call failed");
+    serde_json::from_slice(output).expect("Failed to parse output JSON")
+}
+
 #[test]
 fn test_lookup_one_piece_by_name() {
     let mut plugin = build_plugin();
@@ -102,4 +110,28 @@ fn test_lookup_empty_name_returns_empty() {
     );
 
     println!("\n=== Empty name correctly returned 0 results ===");
+}
+
+#[test]
+fn test_lookup_images_by_anilist_id() {
+    let mut plugin = build_plugin();
+
+    let input = RsLookupWrapper {
+        query: RsLookupQuery::Serie(RsLookupSerie {
+            name: None,
+            ids: Some(RsIds {
+                anilist_manga_id: Some(21087), // One Piece
+                ..Default::default()
+            }),
+        }),
+        credential: None,
+        params: None,
+    };
+
+    let images = call_lookup_images(&mut plugin, &input);
+    let images_array = images.as_array().expect("Expected an array");
+    assert!(
+        !images_array.is_empty(),
+        "Expected at least one image when fetching by ID"
+    );
 }

@@ -121,6 +121,16 @@ const MEDIA_FIELDS: &str = "
       idMal
       siteUrl
       isAdult
+ ";
+
+const MEDIA_IMAGE_FIELDS: &str = "
+      id
+      coverImage {
+        extraLarge
+        large
+        medium
+      }
+      bannerImage
 ";
 
 pub fn build_id_query() -> String {
@@ -150,4 +160,56 @@ pub fn build_search_query() -> String {
 }}"#,
         fields = MEDIA_FIELDS
     )
+}
+
+pub fn build_id_images_query() -> String {
+    format!(
+        r#"query ($id: Int) {{
+  Media(id: $id) {{
+    {fields}
+  }}
+}}"#,
+        fields = MEDIA_IMAGE_FIELDS
+    )
+}
+
+pub fn build_search_images_query() -> String {
+    format!(
+        r#"query ($search: String, $type: MediaType) {{
+  sfw: Page(page: 1, perPage: 25) {{
+    media(search: $search, type: $type, isAdult: false) {{
+      {fields}
+    }}
+  }}
+  nsfw: Page(page: 1, perPage: 25) {{
+    media(search: $search, type: $type, isAdult: true) {{
+      {fields}
+    }}
+  }}
+}}"#,
+        fields = MEDIA_IMAGE_FIELDS
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn image_only_id_query_does_not_include_metadata_fields() {
+        let query = build_id_images_query();
+        assert!(query.contains("coverImage"));
+        assert!(query.contains("bannerImage"));
+        assert!(!query.contains("description"));
+        assert!(!query.contains("startDate"));
+    }
+
+    #[test]
+    fn image_only_search_query_does_not_include_metadata_fields() {
+        let query = build_search_images_query();
+        assert!(query.contains("coverImage"));
+        assert!(query.contains("bannerImage"));
+        assert!(!query.contains("description"));
+        assert!(!query.contains("startDate"));
+    }
 }
