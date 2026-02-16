@@ -1,11 +1,8 @@
 use rs_plugin_common_interfaces::{
-    domain::{
+    RsRequest, domain::{
         external_images::{ExternalImage, ImageType},
-        serie::{Serie, SerieStatus},
-    },
-    lookup::RsLookupMetadataResult,
-    lookup::RsLookupMetadataResultWithImages,
-    RsRequest,
+        serie::{Serie, SerieStatus, SerieType},
+    }, lookup::{RsLookupMetadataResult, RsLookupMetadataResultWithImages}
 };
 use serde_json::json;
 
@@ -151,7 +148,7 @@ pub fn anilist_media_to_result(media: AniListMedia) -> RsLookupMetadataResultWit
     let serie = Serie {
         id: format!("anilist:{}", media.id),
         name: best_title(&media),
-        kind: media.format.as_ref().map(|f| f.to_lowercase()),
+        kind: media.format.as_ref().map(|f| SerieType::from_string(f.to_lowercase().as_str())),
         alt: alt_names(&media),
         status: map_status(&media.status),
         year: media.start_date.as_ref().and_then(|d| d.year),
@@ -165,6 +162,7 @@ pub fn anilist_media_to_result(media: AniListMedia) -> RsLookupMetadataResultWit
     RsLookupMetadataResultWithImages {
         metadata: RsLookupMetadataResult::Serie(serie),
         images,
+        ..Default::default()
     }
 }
 
@@ -283,7 +281,7 @@ mod tests {
         if let RsLookupMetadataResult::Serie(serie) = &result.metadata {
             assert_eq!(serie.id, "anilist:1535");
             assert_eq!(serie.name, "Neon Genesis Evangelion");
-            assert_eq!(serie.kind, Some("tv".to_string()));
+            assert_eq!(serie.kind, Some(SerieType::Tv));
             assert_eq!(serie.year, Some(1995));
             assert_eq!(serie.anilist_manga_id, Some(1535));
             assert_eq!(serie.myanimelist_manga_id, Some(30));
