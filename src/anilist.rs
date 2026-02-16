@@ -125,6 +125,7 @@ const MEDIA_FIELDS: &str = "
 
 const MEDIA_IMAGE_FIELDS: &str = "
       id
+      format
       coverImage {
         extraLarge
         large
@@ -198,6 +199,7 @@ mod tests {
     #[test]
     fn image_only_id_query_does_not_include_metadata_fields() {
         let query = build_id_images_query();
+        assert!(query.contains("format"));
         assert!(query.contains("coverImage"));
         assert!(query.contains("bannerImage"));
         assert!(!query.contains("description"));
@@ -207,6 +209,7 @@ mod tests {
     #[test]
     fn image_only_search_query_does_not_include_metadata_fields() {
         let query = build_search_images_query();
+        assert!(query.contains("format"));
         assert!(query.contains("coverImage"));
         assert!(query.contains("bannerImage"));
         assert!(!query.contains("description"));

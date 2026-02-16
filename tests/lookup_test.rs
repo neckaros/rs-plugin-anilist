@@ -64,7 +64,7 @@ fn test_lookup_one_piece_by_anilist_id() {
         query: RsLookupQuery::Serie(RsLookupSerie {
             name: None,
             ids: Some(RsIds {
-                anilist_manga_id: Some(21087), // One Piece
+                anilist_manga_id: Some(74347), // One Piece
                 ..Default::default()
             }),
         }),
@@ -81,7 +81,7 @@ fn test_lookup_one_piece_by_anilist_id() {
     );
 
     let serie = &results_array[0]["metadata"]["serie"];
-    assert_eq!(serie["id"], "anilist:21087");
+    assert_eq!(serie["id"], "anilist:74347");
 
     println!(
         "\n=== One Piece by ID result ===\n{}",
@@ -121,7 +121,7 @@ fn test_lookup_images_by_anilist_id() {
         query: RsLookupQuery::Serie(RsLookupSerie {
             name: None,
             ids: Some(RsIds {
-                anilist_manga_id: Some(21087), // One Piece
+                anilist_manga_id: Some(74347), // One Piece
                 ..Default::default()
             }),
         }),
@@ -134,5 +134,10 @@ fn test_lookup_images_by_anilist_id() {
     assert!(
         !images_array.is_empty(),
         "Expected at least one image when fetching by ID"
+    );
+    println!(
+        "\n=== One Piece images by ID result ({} images) ===\n{}",
+        images_array.len(),
+        serde_json::to_string_pretty(&images_array).unwrap()
     );
 }
