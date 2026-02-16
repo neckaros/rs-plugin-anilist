@@ -1,8 +1,10 @@
 use rs_plugin_common_interfaces::{
-    RsRequest, domain::{
+    domain::{
         external_images::{ExternalImage, ImageType},
         serie::{Serie, SerieStatus, SerieType},
-    }, lookup::{RsLookupMetadataResult, RsLookupMetadataResultWithImages}
+    },
+    lookup::{RsLookupMetadataResult, RsLookupMetadataResultWithImages},
+    RsRequest,
 };
 use serde_json::json;
 
@@ -148,7 +150,10 @@ pub fn anilist_media_to_result(media: AniListMedia) -> RsLookupMetadataResultWit
     let serie = Serie {
         id: format!("anilist:{}", media.id),
         name: best_title(&media),
-        kind: media.format.as_ref().map(|f| SerieType::from_string(f.to_lowercase().as_str())),
+        kind: media
+            .format
+            .as_ref()
+            .map(|f| SerieType::from_string(f.to_lowercase().as_str())),
         alt: alt_names(&media),
         status: map_status(&media.status),
         year: media.start_date.as_ref().and_then(|d| d.year),

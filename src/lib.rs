@@ -1,4 +1,5 @@
 use extism_pdk::{http, log, plugin_fn, FnResult, HttpRequest, Json, LogLevel, WithReturnCode};
+use std::collections::HashSet;
 
 use rs_plugin_common_interfaces::{
     domain::external_images::ExternalImage,
@@ -232,9 +233,9 @@ fn lookup_media_with_fetchers(
     fetch_by_id_fn: fn(u64, &Option<PluginCredential>) -> FnResult<Vec<AniListMedia>>,
     fetch_by_search_fn: fn(&str, &str, &Option<PluginCredential>) -> FnResult<Vec<AniListMedia>>,
 ) -> FnResult<Vec<AniListMedia>> {
-    let media_type = match &lookup.query {
-        RsLookupQuery::Serie(_) | RsLookupQuery::Movie(_) => "ANIME",
-        _ => return Ok(vec![]),
+    let media_types = match media_types_for_query(&lookup.query) {
+        Some(types) => types,
+        None => return Ok(vec![]),
     };
 
     let all_media = if let Some(anilist_id) = extract_anilist_id(&lookup.query) {
@@ -247,7 +248,7 @@ fn lookup_media_with_fetchers(
         };
         match search {
             Some(s) if !s.trim().is_empty() => {
-                fetch_by_search_fn(s, media_type, &lookup.credential)?
+                fetch_across_media_types(s, media_types, &lookup.credential, fetch_by_search_fn)?
             }
             _ => {
                 return Err(WithReturnCode::new(
@@ -258,7 +259,59 @@ fn lookup_media_with_fetchers(
         }
     };
 
+    Ok(all_media
+        .into_iter()
+        .filter(|media| media_matches_query(&lookup.query, media))
+        .collect())
+}
+
+fn media_types_for_query(query: &RsLookupQuery) -> Option<&'static [&'static str]> {
+    match query {
+        RsLookupQuery::Serie(_) => Some(&["ANIME", "MANGA"]),
+        RsLookupQuery::Movie(_) => Some(&["ANIME"]),
+        _ => None,
+    }
+}
+
+fn fetch_across_media_types(
+    search: &str,
+    media_types: &[&str],
+    credential: &Option<PluginCredential>,
+    fetch_by_search_fn: fn(&str, &str, &Option<PluginCredential>) -> FnResult<Vec<AniListMedia>>,
+) -> FnResult<Vec<AniListMedia>> {
+    let mut all_media = Vec::new();
+    let mut seen_ids = HashSet::new();
+
+    for media_type in media_types {
+        let media = fetch_by_search_fn(search, media_type, credential)?;
+        for item in media {
+            if seen_ids.insert(item.id) {
+                all_media.push(item);
+            }
+        }
+    }
+
     Ok(all_media)
+}
+
+fn media_matches_query(query: &RsLookupQuery, media: &AniListMedia) -> bool {
+    let format = media.format.as_deref().unwrap_or_default();
+    match query {
+        RsLookupQuery::Serie(_) => is_serie_format(format),
+        RsLookupQuery::Movie(_) => is_movie_format(format),
+        _ => false,
+    }
+}
+
+fn is_serie_format(format: &str) -> bool {
+    matches!(
+        format,
+        "TV" | "TV_SHORT" | "ONA" | "OVA" | "SPECIAL" | "MANGA" | "NOVEL"
+    )
+}
+
+fn is_movie_format(format: &str) -> bool {
+    matches!(format, "MOVIE" | "OVA")
 }
 
 #[plugin_fn]
@@ -273,4 +326,65 @@ pub fn lookup_metadata_images(
         .collect();
 
     Ok(Json(images))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::anilist::AniListMedia;
+
+    fn media_with_format(format: Option<&str>) -> AniListMedia {
+        AniListMedia {
+            id: 1,
+            title: None,
+            media_type: None,
+            format: format.map(str::to_string),
+            status: None,
+            description: None,
+            start_date: None,
+            cover_image: None,
+            banner_image: None,
+            genres: None,
+            synonyms: None,
+            average_score: None,
+            popularity: None,
+            episodes: None,
+            trailer: None,
+            country_of_origin: None,
+            id_mal: None,
+            site_url: None,
+            is_adult: None,
+        }
+    }
+
+    #[test]
+    fn serie_query_accepts_anime_and_manga_formats() {
+        let query = RsLookupQuery::Serie(Default::default());
+        assert!(media_matches_query(&query, &media_with_format(Some("TV"))));
+        assert!(media_matches_query(
+            &query,
+            &media_with_format(Some("MANGA"))
+        ));
+        assert!(!media_matches_query(
+            &query,
+            &media_with_format(Some("MOVIE"))
+        ));
+    }
+
+    #[test]
+    fn movie_query_accepts_movie_and_ova_formats() {
+        let query = RsLookupQuery::Movie(Default::default());
+        assert!(media_matches_query(
+            &query,
+            &media_with_format(Some("MOVIE"))
+        ));
+        assert!(media_matches_query(&query, &media_with_format(Some("OVA"))));
+        assert!(!media_matches_query(&query, &media_with_format(Some("TV"))));
+    }
+
+    #[test]
+    fn serie_query_uses_anime_and_manga_media_types() {
+        let types = media_types_for_query(&RsLookupQuery::Serie(Default::default())).unwrap();
+        assert_eq!(types, &["ANIME", "MANGA"]);
+    }
 }
