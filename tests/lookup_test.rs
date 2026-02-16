@@ -50,7 +50,7 @@ fn test_lookup_one_piece_by_name() {
         "\n=== One Piece search results ({} found) ===",
         results_array.len()
     );
-    for (i, result) in results_array.iter().take(3).enumerate() {
+    for (i, result) in results_array.iter().take(1).enumerate() {
         println!("\n--- Result {} ---", i + 1);
         println!("{}", serde_json::to_string_pretty(result).unwrap());
     }
@@ -90,7 +90,7 @@ fn test_lookup_one_piece_by_anilist_id() {
 }
 
 #[test]
-fn test_lookup_empty_name_returns_empty() {
+fn test_lookup_empty_name_returns_404() {
     let mut plugin = build_plugin();
 
     let input = RsLookupWrapper {
@@ -102,14 +102,15 @@ fn test_lookup_empty_name_returns_empty() {
         params: None,
     };
 
-    let results = call_lookup(&mut plugin, &input);
-    let results_array = results.as_array().expect("Expected an array");
+    let input_str = serde_json::to_string(&input).unwrap();
+    let error = plugin
+        .call::<&str, &[u8]>("lookup_metadata", &input_str)
+        .expect_err("Expected 404 error for empty search");
+    let message = error.to_string();
     assert!(
-        results_array.is_empty(),
-        "Expected no results for empty search"
+        message.contains("Not supported") || message.contains("404"),
+        "Expected error message to mention 404/Not supported, got: {message}"
     );
-
-    println!("\n=== Empty name correctly returned 0 results ===");
 }
 
 #[test]

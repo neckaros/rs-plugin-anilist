@@ -5,6 +5,7 @@ use rs_plugin_common_interfaces::{
     },
     lookup::RsLookupMetadataResult,
     lookup::RsLookupMetadataResultWithImages,
+    RsRequest,
 };
 use serde_json::json;
 
@@ -86,7 +87,10 @@ fn build_images(media: &AniListMedia) -> Vec<ExternalImage> {
         if let Some(url) = url {
             images.push(ExternalImage {
                 kind: Some(ImageType::Poster),
-                url: url.clone(),
+                url: RsRequest {
+                    url: url.clone(),
+                    ..Default::default()
+                },
                 ..Default::default()
             });
         }
@@ -95,7 +99,10 @@ fn build_images(media: &AniListMedia) -> Vec<ExternalImage> {
     if let Some(banner) = &media.banner_image {
         images.push(ExternalImage {
             kind: Some(ImageType::Background),
-            url: banner.clone(),
+            url: RsRequest {
+                url: banner.clone(),
+                ..Default::default()
+            },
             ..Default::default()
         });
     }
@@ -301,6 +308,6 @@ mod tests {
 
         let result = anilist_media_to_result(media);
         assert_eq!(result.images.len(), 1);
-        assert_eq!(result.images[0].url, "https://img.anilist.co/large.jpg");
+        assert_eq!(result.images[0].url.url, "https://img.anilist.co/large.jpg");
     }
 }

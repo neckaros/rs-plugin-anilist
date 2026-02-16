@@ -21,7 +21,7 @@ pub fn infos() -> FnResult<Json<PluginInformation>> {
     Ok(Json(PluginInformation {
         name: "anilist_metadata".into(),
         capabilities: vec![PluginType::LookupMetadata],
-        version: 1,
+        version: 2,
         interface_version: 1,
         repo: Some("https://github.com/neckaros/rs-plugin-anilist".into()),
         publisher: "neckaros".into(),
