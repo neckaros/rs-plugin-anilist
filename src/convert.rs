@@ -2,8 +2,9 @@ use rs_plugin_common_interfaces::{
     domain::{
         external_images::{ExternalImage, ImageType},
         serie::{Serie, SerieStatus, SerieType},
+        Relations,
     },
-    lookup::{RsLookupMetadataResult, RsLookupMetadataResultWithImages},
+    lookup::{RsLookupMetadataResult, RsLookupMetadataResultWrapper},
     RsRequest,
 };
 use serde_json::json;
@@ -144,7 +145,7 @@ fn build_params(media: &AniListMedia) -> Option<serde_json::Value> {
     Some(serde_json::Value::Object(params))
 }
 
-pub fn anilist_media_to_result(media: AniListMedia) -> RsLookupMetadataResultWithImages {
+pub fn anilist_media_to_result(media: AniListMedia) -> RsLookupMetadataResultWrapper {
     let images = build_images(&media);
 
     let serie = Serie {
@@ -164,9 +165,12 @@ pub fn anilist_media_to_result(media: AniListMedia) -> RsLookupMetadataResultWit
         ..Default::default()
     };
 
-    RsLookupMetadataResultWithImages {
+    RsLookupMetadataResultWrapper {
         metadata: RsLookupMetadataResult::Serie(serie),
-        images,
+        relations: Some(Relations {
+            ext_images: Some(images),
+            ..Default::default()
+        }),
         ..Default::default()
     }
 }
@@ -296,7 +300,12 @@ mod tests {
             panic!("Expected Serie metadata");
         }
 
-        assert_eq!(result.images.len(), 2);
+        let ext_images = result
+            .relations
+            .as_ref()
+            .and_then(|relations| relations.ext_images.as_ref())
+            .expect("Expected ext_images in relations");
+        assert_eq!(ext_images.len(), 2);
     }
 
     #[test]
@@ -310,7 +319,12 @@ mod tests {
         media.banner_image = None;
 
         let result = anilist_media_to_result(media);
-        assert_eq!(result.images.len(), 1);
-        assert_eq!(result.images[0].url.url, "https://img.anilist.co/large.jpg");
+        let ext_images = result
+            .relations
+            .as_ref()
+            .and_then(|relations| relations.ext_images.as_ref())
+            .expect("Expected ext_images in relations");
+        assert_eq!(ext_images.len(), 1);
+        assert_eq!(ext_images[0].url.url, "https://img.anilist.co/large.jpg");
     }
 }

@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use rs_plugin_common_interfaces::{
     domain::external_images::ExternalImage,
-    lookup::{RsLookupMetadataResultWithImages, RsLookupQuery, RsLookupWrapper},
+    lookup::{RsLookupMetadataResultWrapper, RsLookupQuery, RsLookupWrapper},
     PluginCredential, PluginInformation, PluginType,
 };
 use serde_json::json;
@@ -22,7 +22,7 @@ pub fn infos() -> FnResult<Json<PluginInformation>> {
     Ok(Json(PluginInformation {
         name: "anilist_metadata".into(),
         capabilities: vec![PluginType::LookupMetadata],
-        version: 2,
+        version: 4,
         interface_version: 1,
         repo: Some("https://github.com/neckaros/rs-plugin-anilist".into()),
         publisher: "neckaros".into(),
@@ -211,10 +211,10 @@ fn execute_search_query(
 #[plugin_fn]
 pub fn lookup_metadata(
     Json(lookup): Json<RsLookupWrapper>,
-) -> FnResult<Json<Vec<RsLookupMetadataResultWithImages>>> {
+) -> FnResult<Json<Vec<RsLookupMetadataResultWrapper>>> {
     let all_media = lookup_media(&lookup)?;
 
-    let results: Vec<RsLookupMetadataResultWithImages> =
+    let results: Vec<RsLookupMetadataResultWrapper> =
         all_media.into_iter().map(anilist_media_to_result).collect();
 
     Ok(Json(results))
