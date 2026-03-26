@@ -63,9 +63,10 @@ fn test_lookup_one_piece_by_anilist_id() {
     let input = RsLookupWrapper {
         query: RsLookupQuery::Serie(RsLookupSerie {
             name: None,
-            ids: Some(RsIds {
-                anilist_manga_id: Some(74347), // One Piece
-                ..Default::default()
+            ids: Some({
+                let mut ids = RsIds::default();
+                ids.set("anilist", 74347); // One Piece
+                ids
             }),
         }),
         credential: None,
@@ -120,9 +121,10 @@ fn test_lookup_images_by_anilist_id() {
     let input = RsLookupWrapper {
         query: RsLookupQuery::Serie(RsLookupSerie {
             name: None,
-            ids: Some(RsIds {
-                anilist_manga_id: Some(74347), // One Piece
-                ..Default::default()
+            ids: Some({
+                let mut ids = RsIds::default();
+                ids.set("anilist", 74347); // One Piece
+                ids
             }),
         }),
         credential: None,

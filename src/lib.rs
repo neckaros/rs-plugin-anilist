@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use rs_plugin_common_interfaces::{
     domain::external_images::ExternalImage,
-    lookup::{RsLookupMetadataResultWrapper, RsLookupQuery, RsLookupWrapper},
+    lookup::{RsLookupMetadataResultWrapper, RsLookupMetadataResults, RsLookupQuery, RsLookupWrapper},
     PluginCredential, PluginInformation, PluginType,
 };
 use serde_json::json;
@@ -22,7 +22,7 @@ pub fn infos() -> FnResult<Json<PluginInformation>> {
     Ok(Json(PluginInformation {
         name: "anilist_metadata".into(),
         capabilities: vec![PluginType::LookupMetadata],
-        version: 4,
+        version: 6,
         interface_version: 1,
         repo: Some("https://github.com/neckaros/rs-plugin-anilist".into()),
         publisher: "neckaros".into(),
@@ -35,8 +35,8 @@ pub fn infos() -> FnResult<Json<PluginInformation>> {
 
 fn extract_anilist_id(query: &RsLookupQuery) -> Option<u64> {
     match query {
-        RsLookupQuery::Serie(s) => s.ids.as_ref().and_then(|ids| ids.anilist_manga_id),
-        RsLookupQuery::Movie(m) => m.ids.as_ref().and_then(|ids| ids.anilist_manga_id),
+        RsLookupQuery::Serie(s) => s.ids.as_ref().and_then(|ids| ids.anilist_manga_id()),
+        RsLookupQuery::Movie(m) => m.ids.as_ref().and_then(|ids| ids.anilist_manga_id()),
         _ => None,
     }
 }
@@ -211,13 +211,13 @@ fn execute_search_query(
 #[plugin_fn]
 pub fn lookup_metadata(
     Json(lookup): Json<RsLookupWrapper>,
-) -> FnResult<Json<Vec<RsLookupMetadataResultWrapper>>> {
+) -> FnResult<Json<RsLookupMetadataResults>> {
     let all_media = lookup_media(&lookup)?;
 
     let results: Vec<RsLookupMetadataResultWrapper> =
         all_media.into_iter().map(anilist_media_to_result).collect();
 
-    Ok(Json(results))
+    Ok(Json(RsLookupMetadataResults { results, next_page_key: None }))
 }
 
 fn lookup_media(lookup: &RsLookupWrapper) -> FnResult<Vec<AniListMedia>> {
